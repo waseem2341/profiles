@@ -1,0 +1,19 @@
+{
+    "station": [{
+        "name": "Oslo",
+        "lat": 59.91,
+        "lon": 10.75,
+        "ele": 0,
+        "wav": 1064,
+        "typ": "ceilo",
+        "instr": "CHM15k"
+    }, {
+        "name": "Flesland",
+        "lat": 60.40,
+        "lon": 5.32,
+        "ele": 0,
+        "wav": 1064,
+        "typ": "ceilo",
+        "instr": "CHM15k"
+    }]
+}

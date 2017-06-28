@@ -1,6 +1,10 @@
 #!/usr/bin/python3.5
 #reads the BASIC output files and creates json files
 
+#change directory to be launched by crontab
+import os
+os.chdir('/home/augustinm/Desktop/Dev/profiles')
+
 basic_path='/disk1/augustinm/BASIC_out/out/'
 output_path='./json/'
 
@@ -28,20 +32,20 @@ for yyyy in yrs:
             print(yyyy+'/'+mm+'/'+dd)
             yy=yyyy[2:]
 
-            import csv
-            sitesfile='./sites.csv'
+
+            print('stations files reading')
+            import json
+            sitesfile='./sites.json'
             statname, statlat, statlon, statele, statwav = [], [], [], [], []
-            readCSV = csv.reader(open(sitesfile), delimiter=',')
-            i = 0
-            for row in readCSV:
-                if i>0: # 1 header line
-                    print(row)
-                    statname.append(row[0])
-                    statlat.append(float(row[1]))
-                    statlon.append(float(row[2]))
-                    statele.append(float(row[3]))
-                    statwav.append(float(row[4]))
-                i += 1
+            with open(sitesfile) as data_file:
+                data = json.load(data_file)
+
+            for stat in data['station']:
+                statname.append(stat['name'])
+                statlat.append(stat['lat'])
+                statlon.append(stat['lon'])
+                statele.append(stat['ele'])
+                statwav.append(stat['wav'])
 
 
             #reads each basic_out file

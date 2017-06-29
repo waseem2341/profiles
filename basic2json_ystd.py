@@ -127,42 +127,36 @@ for i, stat in enumerate(statname):
 
     #makedir
     import os
-    os.makedirs(output_path+yyyy+mm, exist_ok=True)
+    os.makedirs(output_path+yyyy+mm+'/ext/', exist_ok=True)
 
     #write the file
-    outfile=output_path+yyyy+mm+'/'+statname[i]+'_'+yyyy+mm+dd+'_ceilo'+'.json'
-    f = open(outfile, 'w')
+    outf=output_path+yyyy+mm+'/ext/'+statname[i]+'_'+yyyy+mm+dd+'_ceilo'+'.json'
 
+    data={}    
     #header
-    f.write('{'+'\n')
-    f.write('"station": {'+'\n')
-    f.write('"name": "'+str(statname[i])+'"'+','+'\n')
-    f.write('"wav": "'+str(statwav[i])+'",'+'\n')
-    f.write('"lat": "'+str(statlat[i])+'",'+'\n')
-    f.write('"lon": "'+str(statlon[i])+'",'+'\n')
-    f.write('"ele": "'+str(statele[i])+'"'+'\n')
-    f.write('},'+'\n')
+    data["station"]={}
+    data["station"]["name"]=str(statname[i])
+    data["station"]["wav"]=str(statwav[i])
+    data["station"]["lat"]=str(statlat[i])
+    data["station"]["lon"]=str(statlon[i])
+    data["station"]["ele"]=str(statele[i])
 
-    f.write('"'+yyyy+mm+dd+'": {'+'\n')
-    f.write('"z": '+str(z_agl)+','+'\n')
+
+    #data
+    data[str(yyyy+mm+dd)]={}
+    data[str(yyyy+mm+dd)]["z"]=z_agl
 
     hEXT=np.array(hEXT)
     for j, t in enumerate(hTIME):
-        f.write('"'+str(t).zfill(2)+'": {'+'\n')
+        data[str(yyyy+mm+dd)][str(t).zfill(2)]={}
+
         strext=[round(val,5) for val in hEXT[j,:]]
-        strext2= [str(txt).replace('nan','-99') for txt in strext]
-        f.write('"ext": '+str([txt for txt in strext2]).replace("'", "")+','+'\n')
-        f.write('"scene": "'+str(hSCENE[j])+'"\n')
-        #the last } must have no comma
-        if j<len(hTIME)-1:
-            f.write('},'+'\n')
-        else:
-            f.write('}'+'\n')
-
-    f.write('}'+'\n')
-    f.write('}'+'\n')
-    f.close()
-
+        strext2= [str(txt).replace('nan','-99').replace("'", "") for txt in strext]
+        data[str(yyyy+mm+dd)][str(t).zfill(2)]["ext"]=[float(txt) for txt in strext2]
+        data[str(yyyy+mm+dd)][str(t).zfill(2)]["scene"]=hSCENE[j]
+    
+    with open(outf, 'w') as outfile:
+        json.dump(data, outfile)
 
 
 

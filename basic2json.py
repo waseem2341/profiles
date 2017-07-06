@@ -11,11 +11,10 @@ output_path='./json/'
 dds=["%.2d" % i for i in range(31+1)]
 mms=["%.2d" % i for i in range(12+1)]
 yrs=['2017']
-'''
-dd='02'
-mm='06'
-yyyy='2017'
-'''
+
+mms=['','07']
+yyyys=['2017']
+
 
 fillval=-9.9
 fracaer=1.0 #fraction nb_cøear/nb_tot considered as aerosol scene. Clouds below this fraction
@@ -25,13 +24,13 @@ import numpy as np
 import time
 from datetime import datetime
 
-
 for yyyy in yrs:
     for mm in mms[1:]:
         for dd in dds[1:]:
             print(yyyy+'/'+mm+'/'+dd)
             yy=yyyy[2:]
 
+            calmap={}
 
             print('stations files reading')
             import json
@@ -47,11 +46,13 @@ for yyyy in yrs:
                 statele.append(stat['ele'])
                 statwav.append(stat['wav'])
 
+            obj_ext={}
+            obj_scn={}
 
             #reads each basic_out file
             #/disk1/augustinm/BASIC_out/out/Oslo/1706/14/sa_50/Oslo170614_INV
             #Time(UT)        aod@1064        SI      clear_nb        total_nb        Sa(sr)  15      30      45      60
-
+            import csv
             for i, stat in enumerate(statname):
                 basicfile=basic_path+statname[i]+'/'+yy+mm+'/'+dd+'/'+'sa_50'+'/'+statname[i]+yy+mm+dd+'_INV';
                 import os.path
@@ -144,6 +145,7 @@ for yyyy in yrs:
                 data[str(yyyy+mm+dd)]["z"]=z_agl
 
                 hEXT=np.array(hEXT)
+                maxext=[]
                 for j, t in enumerate(hTIME):
                     data[str(yyyy+mm+dd)][str(t).zfill(2)]={}
 
@@ -151,37 +153,46 @@ for yyyy in yrs:
                     strext2= [str(txt).replace('nan','-99').replace("'", "") for txt in strext]
                     data[str(yyyy+mm+dd)][str(t).zfill(2)]["ext"]=[float(txt) for txt in strext2]
                     data[str(yyyy+mm+dd)][str(t).zfill(2)]["scene"]=hSCENE[j]
-
+                    maxext.append(np.nanmax([float(txt) for txt in strext2]))
                 with open(outf, 'w') as outfile:
                     json.dump(data, outfile)
+                
+                
+                #put arrays in objects
+                obj_scn[stat]=data[str(yyyy+mm+dd)][str(t).zfill(2)]["scene"]=hSCENE
+                obj_ext[stat]=maxext
+        
+            #creates directory
+            import os
+            os.makedirs(output_path+yyyy+mm+'/calmap/', exist_ok=True)
+        
+            #write the file
+            outf2=output_path+yyyy+mm+'/calmap/'+yyyy+mm+'.json'
+
+            #test opening file
+            import os.path
+            if os.path.isfile(outf2):
+                with open(outf2) as data_file:
+                    calmap = json.load(data_file)
+            else:
+                #if fail
+                for i, stat in enumerate(statname):
+                    calmap[statname[i]]={}
+                    calmap[statname[i]]["name"]=str(statname[i])
+                    calmap[statname[i]]["wav"]=str(statwav[i])
+                    calmap[statname[i]]["lat"]=str(statlat[i])
+                    calmap[statname[i]]["lon"]=str(statlon[i])
+                    calmap[statname[i]]["ele"]=str(statele[i])
+
+            #wether the file existed or not, append the day result
+            #for each day, arrays of horly ext and scenes
+            for i, stat in enumerate(statname):
+                if stat in obj_scn:
+                    calmap[statname[i]][str(dd).zfill(2)]={}
+                    calmap[statname[i]][str(dd).zfill(2)]['scene']=obj_scn[stat]
+                    calmap[statname[i]][str(dd).zfill(2)]['max_ext']=obj_ext[stat]
+
+            with open(outf2, 'w') as outfile2:
+                json.dump(calmap, outfile2)
 
 
-
-
-#example of valid json file
-'''
-{
-	"station": {
-		"name": "Oslo",
-		"lat": "xx",
-		"lon": "yy",
-		"ele": "zz"
-	},
-
-	"20170605": {
-		"z": [0.10, 0.15, 0.30],
-		"00": {
-			"ext": [0.10, 0.15, 0.30],
-			"typ": "aer"
-		},
-		"01": {
-			"ext": [0.10, 0.15, 0.30],
-			"typ": "cloud"
-		},
-		"02": {
-			"ext": [0.10, 0.15, 0.30],
-			"typ": "aer"
-		}
-	}
-}
-'''

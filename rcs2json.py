@@ -16,9 +16,7 @@ dd='02'
 mm='06'
 yyyy='2017'
 '''
-
-dds=['','28']
-mms=['','06']
+mms=['','07']
 
 fillval=-9.9
 fracaer=1.0 #fraction nb_cøear/nb_tot considered as aerosol scene. Clouds below this fraction
@@ -80,7 +78,7 @@ for yyyy in yrs:
                         if time>prev_time:
                             TIME.append(time)
                         if z>prev_z and n_z==0:
-                            Z.append(z)
+                            Z.append(z*1e3)
                         else:
                             n_z+=1
                         
@@ -92,34 +90,8 @@ for yyyy in yrs:
 
 
                 #creates array of z_agl and time
+                 
                 
-                
-                '''
-                #hourly averages
-                hTIME=np.arange(0,24)
-                hAOD, hZ, hRCS = [], [], []
-
-
-                for t in hTIME:
-                    itime=np.where(abs(TIME-(t+0.5))<=0.5)
-                    haod=np.nanmean(AOD[itime])
-                    hsi=np.nanmean(SI[itime])
-                    hclear_frac=np.nanmean(CLEAR_FRAC[itime])
-                    hsa=np.nanmean(SA[itime])
-                    hext=np.nanmean(EXT[itime,:],axis=1)
-                    #append
-                    hAOD.append(haod)
-                    hSI.append(hsi)
-                    hCLEAR_FRAC.append(hclear_frac)
-                    hSA.append(hsa)
-                    hEXT.append(hext)
-                    if hclear_frac>=fracaer:
-                        hSCENE.append('aer')
-                    else:
-                        hSCENE.append('cloud')
-                #remove the one dimension
-                hEXT=np.squeeze(hEXT)
-                '''
 
                 #makedir
                 import os
@@ -136,43 +108,25 @@ for yyyy in yrs:
                 data["station"]["lat"]=str(statlat[i])
                 data["station"]["lon"]=str(statlon[i])
                 data["station"]["ele"]=str(statele[i])
-                
+
+                #send only altitudes below zmax
+                zmax=10000#en m
+                Z=np.array(Z)
+                idx_zmax=np.where(Z<zmax)
+                lidx_zmax=idx_zmax[0][-1]+1
+               
+                step=5
                 #data
                 data[str(yyyy+mm+dd)]={}
-                data[str(yyyy+mm+dd)]["z"]=Z
+                data[str(yyyy+mm+dd)]["z"]=Z[0:lidx_zmax:step].tolist()
                 for j, t in enumerate(TIME):
-                    strrcs=[round(val,5) for val in RCS[j*len(Z):(j+1)*len(Z)]]
-                    data[str(yyyy+mm+dd)][str(t).zfill(4)]=strrcs
+                    #reduce size by selecting only odd indexes
+                    if j%step==0:
+                        fmt_t=str('{:06.3f}'.format(t))
+                        strrcs=[round(val,5) for val in RCS[j*len(Z):(j+1)*len(Z)]]
+                        data[str(yyyy+mm+dd)][fmt_t]=strrcs[0:lidx_zmax:step]
                 
                 with open(outf, 'w') as outfile:
                     json.dump(data, outfile)
 
 
-
-#example of valid json file
-'''
-{
-	"station": {
-		"name": "Oslo",
-		"lat": "xx",
-		"lon": "yy",
-		"ele": "zz"
-	},
-
-	"20170605": {
-		"z": [0.10, 0.15, 0.30],
-		"00": {
-			"ext": [0.10, 0.15, 0.30],
-			"typ": "aer"
-		},
-		"01": {
-			"ext": [0.10, 0.15, 0.30],
-			"typ": "cloud"
-		},
-		"02": {
-			"ext": [0.10, 0.15, 0.30],
-			"typ": "aer"
-		}
-	}
-}
-'''

@@ -3,6 +3,7 @@ PATH=/opt/someApp/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/b
 
 #run the python script
 /home/augustinm/Desktop/Dev/profiles/basic2json_ystd.py
+/home/augustinm/Desktop/Dev/profiles/rcs2json_ystd.py
 
 #rsync the directories
 dirin_json='/home/augustinm/Desktop/Dev/profiles/json/'
